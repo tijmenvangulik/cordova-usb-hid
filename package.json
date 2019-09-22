@@ -1,0 +1,28 @@
+{
+  "name": "org.vangulik.usb.hid",
+  "version": "0.0.1",
+  "description": "cordova usb hid",
+  "cordova": {
+    "id": "org.vangulik.usb hid",
+    "platforms": [
+      "android"
+    ]
+  },
+  "keywords": [
+    "ecosystem:cordova",
+    "cordova-android",
+    "usb",
+    "hid"
+  ],
+  "author": "Tijmen van Gulik",
+  "license": "Apache 2.0",
+  "dependencies": {
+    "@types/cordova": "0.0.34"
+  },
+  "devDependencies": {
+    "typescript": "^3.6.3"
+  },
+  "scripts": {
+    "build": "tsc"
+  }
+}
