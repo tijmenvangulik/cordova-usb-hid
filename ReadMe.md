@@ -7,13 +7,17 @@ this plugin is a merge of two existing plugin and some features which I needed t
 
     https://github.com/noconsulting/cordova-plugin-hid-usb/blob/master/src/android/fr/noconsulting/UsbHid.java
 
+
+# usage
+
 add the plugin to cordova:
 
     cordova plugin add https://github.com/tijmenvangulik/cordova-usb-hid.git
 
-# usage
+# example
 
-In this example I open an read/write connection with 121 package size. The data is csafe specific replace it with data for your device. The example code could be simplyfied by using async await. 
+In this example I open an read/write connection with 121 package size. The data is csafe specific replace it with data for your device. The example code could be simplyfied by using async await. The example picks the first device. You could do here more complex filtering.
+
 
 ```javascript
     var errorHandler=(e)=>{console.error(e)};
