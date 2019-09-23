@@ -90,3 +90,15 @@ this also includes the empty blocks (all bytes zero). To not overload the main j
 packets in java. 
    * skippFirstByteZero (skipp when only first byte zero)
    * skippZeroResults (skipp when all bytes are zero (higher costs) )
+ * The type definitons work if you have the cordova types included. If this is not the case you van manually add the cordova name space declarations:
+
+```typescript
+declare interface Cordova {
+    plugins:CordovaPlugins;
+}
+declare interface CordovaPlugins {
+    UsbHid : UsbHidPlugin;     
+}  
+
+declare var cordova: Cordova;
+```
