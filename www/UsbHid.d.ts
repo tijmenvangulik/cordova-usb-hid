@@ -31,5 +31,3 @@ declare class UsbHidPlugin {
 interface CordovaPlugins {
     UsbHid: UsbHidPlugin;
 }
-declare var exec: void;
-declare var usbhid: UsbHidPlugin;

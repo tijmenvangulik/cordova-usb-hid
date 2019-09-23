@@ -117,7 +117,9 @@ class UsbHidPlugin {
 interface CordovaPlugins {
     UsbHid : UsbHidPlugin;     
 }   
-
+/** @internal */ 
 var exec = require('cordova/exec');
+/** @internal */ 
 var usbhid = new UsbHidPlugin();
+/** @internal */ 
 module.exports = usbhid;
