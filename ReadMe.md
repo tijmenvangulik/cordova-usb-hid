@@ -16,10 +16,28 @@ add the plugin to cordova:
 
 # example
 
-In this example I open an read/write connection with 121 package size. The data is csafe specific replace it with data for your device. The example code could be simplyfied by using async await. The example picks the first device. You could do here more complex filtering.
+In this example I open an read/write connection with 121 package size. The data is csafe specific replace it with data for your device. The example picks the first device. You could do here more complex filtering.
 
+using async await
 
-```javascript
+```typescript
+
+    await cordova.plugins.UsbHid.registerReadCallback((response)=>{
+                console.log("received "+buf2hex(response));
+    });
+    var devices=await cordova.plugins.UsbHid.enumerateDevices();
+    await cordova.plugins.UsbHid.requestPermission(devices[0]);
+    await cordova.plugins.UsbHid.open({
+                                  packetSize:121,
+                                  skippFirstByteZero:true,
+                                  timeout:1000});
+    var data= new Uint8Array([0x02,0xF0,0xFD,0x00,0x80,0x80,0xF2]);
+    await cordova.plugins.UsbHid.writeHex(data)
+    
+```
+same example using promises
+
+```typescript
     var errorHandler=(e)=>{console.error(e)};
     cordova.plugins.UsbHid.registerReadCallback((response)=>{
                 console.log("received "+buf2hex(response));
@@ -45,8 +63,12 @@ In this example I open an read/write connection with 121 package size. The data 
         }).catch(errorHandler);
     }).catch(errorHandler);
 ```
+# api type definitions
+
+The typescript type definitions can be found [here](www/UsbHid.d.ts) 
 
 # Tips and tricks
+
 * Often the communication goes wrong when the packet size in not correct. The plugin reads the packetSize from the device. However this can be the wrong packet size. Please check de doc of your device and use the correct packet size.
 * configure the device in the AndroidManifest.xml so your app is opened when the device is connected. You can configure this from the cordova config.xml. For example
 ```  xml
