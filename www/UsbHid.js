@@ -24,7 +24,7 @@ var cordova_usb_hid;
                 cordova.exec(successCallback, errorCallback, 'UsbHid', 'open', [{ 'opts': opts }]);
             });
         };
-        UsbHidPlugin.prototype.writeHex = function (data, opts) {
+        UsbHidPlugin.prototype.write = function (data, opts) {
             var writeOpts = opts;
             if (!writeOpts)
                 writeOpts = {};

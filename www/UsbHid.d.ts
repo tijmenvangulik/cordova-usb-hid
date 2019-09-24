@@ -25,7 +25,7 @@ declare namespace cordova_usb_hid {
         enumerateDevices(): Promise<UsbHidDevices>;
         requestPermission(device: UsbHidDevice): Promise<void>;
         open(opts?: OpenOptions): Promise<void>;
-        writeHex(data: ArrayBuffer, opts?: WriteOptions): Promise<void>;
+        write(data: ArrayBuffer, opts?: WriteOptions): Promise<void>;
         close(): Promise<void>;
         registerReadCallback(readCallback: ReadCallBack): Promise<ArrayBuffer>;
     }

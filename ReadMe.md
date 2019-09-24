@@ -32,7 +32,7 @@ using async await
                                   skippFirstByteZero:true,
                                   timeout:1000});
     var data= new Uint8Array([0x02,0xF0,0xFD,0x00,0x80,0x80,0xF2]);
-    await cordova.plugins.UsbHid.writeHex(data)
+    await cordova.plugins.UsbHid.write(data)
     
 ```
 same example using promises
@@ -55,7 +55,7 @@ same example using promises
                         timeout:1000})                        
                     .then(()=>{                         
                         var data= new Uint8Array([0x02,0xF0,0xFD,0x00,0x80,0x80,0xF2]);
-                        cordova.plugins.UsbHid.writeHex(data)
+                        cordova.plugins.UsbHid.write(data)
                         .catch(errorHandler);
                     }).catch(errorHandler);
                 }).catch(errorHandler);

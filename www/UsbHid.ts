@@ -69,7 +69,7 @@ namespace cordova_usb_hid {
             
         }
         
-        public writeHex(data : ArrayBuffer,opts? : WriteOptions) : Promise<void> {
+        public write(data : ArrayBuffer,opts? : WriteOptions) : Promise<void> {
             var writeOpts : any=opts;
             if (!writeOpts) writeOpts={};
             
@@ -121,6 +121,7 @@ namespace cordova_usb_hid {
 interface CordovaPlugins {
     UsbHid : cordova_usb_hid.UsbHidPlugin;     
 }   
+
 
 /** @internal */ 
 var exec = require('cordova/exec');
