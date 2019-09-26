@@ -25,6 +25,7 @@ import android.hardware.usb.UsbInterface;
 import android.hardware.usb.UsbManager;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
+import android.os.Build;
 import android.util.Log;
 
 public class UsbHid extends CordovaPlugin {
@@ -92,9 +93,12 @@ public class UsbHid extends CordovaPlugin {
                     for (UsbDevice usbDevice : deviceList.values()) {
                         JSONObject obj = new JSONObject();
                         addProperty(obj, "name", usbDevice.getDeviceName());
-                        addProperty(obj, "vendor", usbDevice.getVendorId());
-                        addProperty(obj, "product", usbDevice.getProductId());
-                        addProperty(obj, "serial", usbDevice.getSerialNumber());
+                        addProperty(obj, "vendorId", usbDevice.getVendorId());
+                        addProperty(obj, "productId", usbDevice.getProductId());
+                        if (Build.VERSION.SDK_INT>21 ) {
+                            addProperty(obj, "serialNumber", usbDevice.getSerialNumber());
+                            addProperty(obj, "productName", usbDevice.getProductName());
+                        }
 
                         result.put(obj);
                     }
@@ -110,6 +114,33 @@ public class UsbHid extends CordovaPlugin {
 
     }
 
+    //lets thread sleep on pauze and start/stop the receiver
+    @Override
+    public void onPause(boolean value)
+    {
+        super.onPause(value);
+        if (usbThreadDataReceiver!=null)
+            usbThreadDataReceiver.stopThis();
+        /*if(usbReceiver!=null) cordova.getActivity().unregisterReceiver(usbReceiver);*/
+    }
+
+    @Override
+    public void onResume(boolean value)
+    {
+
+        super.onResume( value);
+        if( endPointRead!=null){
+            usbThreadDataReceiver = new USBThreadDataReceiver();
+            usbThreadDataReceiver.start();
+        }
+
+        //IntentFilter filter = new IntentFilter(UsbBroadcastReceiver.USB_PERMISSION);
+        //filter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
+        //filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
+       // cordova.getActivity().registerReceiver(usbReceiver, filter);
+    }
+
+    //UsbBroadcastReceiver usbReceiver;
     private void requestPermission(final JSONObject opts, final CallbackContext callbackContext) {
         cordova.getThreadPool().execute(new Runnable() {
             public void run() {
@@ -273,7 +304,8 @@ public class UsbHid extends CordovaPlugin {
                     Log.d(TAG, data);
                     byte[] buffer = hexStringToByteArray(data,localPacketsize);
                     int result = connection.bulkTransfer(endPointWrite,buffer,localPacketsize, localTimeout);
-                    callbackContext.success(result + " bytes written.");
+                    if (result<0) callbackContext.error("Can not transfer data to the device.");
+                    else callbackContext.success(result + " bytes written.");
                 }
                 catch (Exception e) {
                     // deal with error

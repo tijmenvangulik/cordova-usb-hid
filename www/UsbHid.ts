@@ -5,9 +5,10 @@ namespace cordova_usb_hid {
     export type ReadCallBack = (data : ArrayBuffer)=>void;
     export interface UsbHidDevice {
         name : string;
-        vendor : string;
-        product : string;
-        serial : string;
+        vendorId : string;
+        productId : string;
+        serialNumber : string;
+        productName : string;
 
     }
     export type UsbHidDevices = UsbHidDevice[];
