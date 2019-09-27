@@ -1,16 +1,23 @@
 {
-  "name": "org.vangulik.usb.hid",
-  "version": "0.0.1",
-  "description": "cordova usb hid",
+  "name": "cordova-plugin-usb-hid",
+  "version": "1.0.0",
+  "description": "cordova plugin usb hid",
   "cordova": {
-    "id": "org.vangulik.usb hid",
+    "id": "cordova-plugin-usb-hid",
     "platforms": [
       "android"
     ]
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tijmenvangulik/cordova-usb-hid"
+  },
+  "types": "./www/UsbHid.d.ts",
   "keywords": [
     "ecosystem:cordova",
     "cordova-android",
+    "cordova",
+    "plugin",
     "usb",
     "hid"
   ],
