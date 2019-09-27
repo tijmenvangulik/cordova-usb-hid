@@ -1,6 +1,6 @@
 Cordova usb hid plugin for android
 
-# thanks
+# Thanks
 this plugin is a merge of two existing plugin and some features which I needed to communicate for Hid.
 
     https://www.npmjs.com/package/cordova-plugin-usbserial
@@ -8,13 +8,16 @@ this plugin is a merge of two existing plugin and some features which I needed t
     https://github.com/noconsulting/cordova-plugin-hid-usb/blob/master/src/android/fr/noconsulting/UsbHid.java
 
 
-# usage
+# Usage
 
 add the plugin to cordova:
 
     cordova plugin add https://github.com/tijmenvangulik/cordova-usb-hid.git
 
-# example
+or npm : 
+  https://www.npmjs.com/package/cordova-plugin-usb-hid
+
+# Example
 
 In this example I open an read/write connection with 121 package size. The data is csafe specific replace it with data for your device. The example picks the first device. You could do here more complex filtering.
 
@@ -63,7 +66,7 @@ same example using promises
         }).catch(errorHandler);
     }).catch(errorHandler);
 ```
-# api type definitions
+# Api type definitions
 
 The typescript type definitions can be found [here](www/UsbHid.d.ts) 
 
@@ -102,3 +105,5 @@ declare interface CordovaPlugins {
 
 declare var cordova: Cordova;
 ```
+* There is not yet an special function for sending and receiving reports. However it is easy to do this using the existing functions since an report is just an package and the first byte is the report id. 
+  
