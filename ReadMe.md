@@ -44,9 +44,6 @@ using async await and a writeRead routine sending one package and waiting for th
 
 ```typescript
 
-    await cordova.plugins.UsbHid.registerReadCallback((response)=>{
-                console.log("received "+buf2hex(response));
-    });
     var devices=await cordova.plugins.UsbHid.enumerateDevices();
     if (devices.length==0) throw "Device not found";
     await cordova.plugins.UsbHid.requestPermission(devices[0]);

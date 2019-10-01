@@ -30,6 +30,7 @@
     "typescript": "^3.6.3"
   },
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "npmPublish": "npm publish"
   }
 }
