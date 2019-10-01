@@ -3,6 +3,7 @@ package org.vangulik.usb.hid;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.HashMap;
+import java.util.Arrays;
 import java.util.Iterator;
 
 import org.apache.cordova.CordovaPlugin;
@@ -47,8 +48,9 @@ public class UsbHid extends CordovaPlugin {
     private boolean skippFirstByteZero = false;
 
     private Byte[] bytes;
-    private int timeout = 1000;
+    private int writeTimeout = 500;
     private boolean forceClaim = true;
+    private int readTimeout = 100;
 
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
@@ -72,13 +74,17 @@ public class UsbHid extends CordovaPlugin {
         } else if (action.equals("registerReadCallback")) {
             this.registerReadCallback(callbackContext);
             return true;
-        }else if (action.equals("writeHex")) {
+        } else if (action.equals("writeHex")) {
             JSONObject opts = arg_object.has("opts")? arg_object.getJSONObject("opts") : new JSONObject();
 
             this.writeHex(opts,callbackContext);
             return true;
-        }
+        } else if (action.equals("writeReadHex")) {
+            JSONObject opts = arg_object.has("opts")? arg_object.getJSONObject("opts") : new JSONObject();
 
+            this.writeReadHex(opts,callbackContext);
+            return true;
+        }
 
         return false;
     }
@@ -129,7 +135,7 @@ public class UsbHid extends CordovaPlugin {
     {
 
         super.onResume( value);
-        if( endPointRead!=null){
+        if( endPointRead!=null && usbThreadDataReceiver!=null){
             usbThreadDataReceiver = new USBThreadDataReceiver();
             usbThreadDataReceiver.start();
         }
@@ -198,8 +204,10 @@ public class UsbHid extends CordovaPlugin {
                         if (opts.has("skippFirstByteZero"))
                             skippFirstByteZero=opts.getBoolean("skippFirstByteZero");
 
-                        if (opts.has("timeout"))
-                            timeout=opts.getInt("timeout");
+                        if (opts.has("writeTimeout"))
+                            writeTimeout=opts.getInt("writeTimeout");
+                        if (opts.has("readTimeout"))
+                            readTimeout=opts.getInt("readTimeout");
 
                     }
 
@@ -211,7 +219,7 @@ public class UsbHid extends CordovaPlugin {
                     callbackContext.error("Error getting end points: "+e.getMessage());
                     return;
                 }
-                if( endPointRead!=null) {
+                if( endPointRead!=null && readCallback!=null) {
                     try {
                         usbThreadDataReceiver = new USBThreadDataReceiver();
                         usbThreadDataReceiver.start();
@@ -273,6 +281,45 @@ public class UsbHid extends CordovaPlugin {
         });
 
     }
+
+    private boolean writeHex_internal(final JSONObject opts, final CallbackContext callbackContext, boolean returnSucess) {
+        if (connection == null) {
+            callbackContext.error("Not connected");
+            return false;
+        }
+        if (endPointWrite == null) {
+            callbackContext.error("No end point available to write to");
+            return false;
+        }
+
+        try {
+            String data=opts.getString("data");
+            int localPacketsize=packetSize;
+            if (opts.has("packetsize"))
+                localPacketsize=opts.getInt("packetsize");
+            int localTimeout=writeTimeout;
+            if (opts.has("writeTimeout"))
+                localTimeout=opts.getInt("writeTimeout");
+            Log.d(TAG, data);
+            byte[] buffer = hexStringToByteArray(data,localPacketsize);
+            int result = connection.bulkTransfer(endPointWrite,buffer,localPacketsize, localTimeout);
+            if (result<0) {
+                callbackContext.error("Can not transfer data to the device.");
+                return false;
+            }
+            else if (returnSucess){
+                callbackContext.success(result + " bytes written.");
+            }
+
+        }
+        catch (Exception e) {
+            // deal with error
+            Log.d(TAG, e.getMessage());
+            callbackContext.error(e.getMessage());
+            return false;
+        }
+        return true;
+    }
     /**
      * Write hex on the serial port
      * @param data the {@link String} representation of the data to be written on the port as hexadecimal string
@@ -283,39 +330,49 @@ public class UsbHid extends CordovaPlugin {
 
         cordova.getThreadPool().execute(new Runnable() {
             public void run() {
+                writeHex_internal(opts,callbackContext,true);
 
-                if (connection == null) {
-                    callbackContext.error("Not connected");
-                    return;
-                }
-                if (endPointWrite == null) {
-                    callbackContext.error("No end point available to write to");
-                    return;
-                }
 
-                try {
-                    String data=opts.getString("data");
-                    int localPacketsize=packetSize;
-                    if (opts.has("packetsize"))
-                        localPacketsize=opts.getInt("packetsize");
-                    int localTimeout=timeout;
-                    if (opts.has("timeout"))
-                        localTimeout=opts.getInt("timeout");
-                    Log.d(TAG, data);
-                    byte[] buffer = hexStringToByteArray(data,localPacketsize);
-                    int result = connection.bulkTransfer(endPointWrite,buffer,localPacketsize, localTimeout);
-                    if (result<0) callbackContext.error("Can not transfer data to the device.");
-                    else callbackContext.success(result + " bytes written.");
-                }
-                catch (Exception e) {
-                    // deal with error
-                    Log.d(TAG, e.getMessage());
-                    callbackContext.error(e.getMessage());
-                }
             }
         });
     }
+    private void writeReadHex(final JSONObject opts, final CallbackContext callbackContext) {
 
+        cordova.getThreadPool().execute(new Runnable() {
+            public void run() {
+                try {
+                    if (readCallback!=null) {
+                        callbackContext.error("Read/write can not be used when the read callback is registered.");
+                        return;
+                    }
+                    if (writeHex_internal(opts,callbackContext,false)) {
+                        int localPacketsize=packetSize;
+                        if (opts.has("packetsize"))
+                            localPacketsize=opts.getInt("packetsize");
+                        int localTimeout=readTimeout;
+                        if (opts.has("readTimeout"))
+                            localTimeout=opts.getInt("readTimeout");
+
+                        final byte[] buffer = new byte[packetSize];
+                        int bytesReceived = connection.bulkTransfer(endPointRead, buffer, localPacketsize, localTimeout);
+                        if (bytesReceived>=0) {
+
+                            if (!receivedData_Internal(buffer,bytesReceived,callbackContext,localPacketsize)) {
+                                callbackContext.error("No data returned");
+                            }
+                        }
+                        else callbackContext.error("Read error");
+                    }
+                }
+                catch (Exception e) {
+                    callbackContext.error("Error writing and reading: "+e.getMessage());
+                }
+
+
+
+            }
+        });
+    }
     /**
      * Convert a given string of hexadecimal numbers
      * into a byte[] array where every 2 hex chars get packed into
@@ -345,26 +402,37 @@ public class UsbHid extends CordovaPlugin {
         } catch (JSONException e) {
         }
     }
+    private boolean receivedData_Internal(byte[] dataIn, int bytesReceived, CallbackContext pReadCallBack, int pPacketsize) {
+        byte[] data =dataIn;
+        if (bytesReceived<0) return false;
 
-    private void updateReceivedData(byte[] data) {
-        if (readCallback != null && data.length>0) {
-            //check if the return is all zero, when it is then do not send the result
-
-            int i=0;
-            if (skippFirstByteZero)  {
-                if (data[i]==0) i=data.length;
-            }
-            else {
-                while (skippZeroResults && i<data.length && data[i]==0) i++;
-            }
-
-            if (i<data.length) { //if there is any none zero data
-                PluginResult result = new PluginResult(PluginResult.Status.OK, data);
-                result.setKeepCallback(true);
-                readCallback.sendPluginResult(result);
-            }
-
+        if (bytesReceived < pPacketsize) {
+            data = Arrays.copyOfRange(dataIn, 0, bytesReceived);
         }
+
+        int i=0;
+        if (skippFirstByteZero)  {
+            if (data[i]==0) i=data.length;
+        }
+        else {
+            while (skippZeroResults && i<data.length && data[i]==0) i++;
+        }
+
+        if (i<data.length) { //if there is any none zero data
+            PluginResult result = new PluginResult(PluginResult.Status.OK, data);
+            result.setKeepCallback(true);
+            pReadCallBack.sendPluginResult(result);
+            return true;
+        }
+        return false;
+    }
+
+    private void updateReceivedData(byte[] data, int bytesReceived) {
+        if (readCallback != null) {
+        //check if the return is all zero, when it is then do not send the result
+            receivedData_Internal(data,bytesReceived,readCallback,packetSize);
+        }
+
     }
 
     /***************************/
@@ -382,8 +450,14 @@ public class UsbHid extends CordovaPlugin {
                 if (connection != null && endPointRead != null) {
                     while (!isStopped) {
                         final byte[] buffer = new byte[packetSize];
-                        final int status = connection.bulkTransfer(endPointRead, buffer, packetSize, 100);
-                        updateReceivedData(buffer);
+                        int bytesReceived = connection.bulkTransfer(endPointRead, buffer, packetSize, readTimeout);
+                        if (bytesReceived>0 && !isStopped) {
+                            updateReceivedData(buffer,packetSize);
+                        }
+
+                        if (bytesReceived>0 && bytesReceived!=bytesReceived) {
+                            Log.e(TAG, "Warning packet not fully read");
+                        }
                     }
                 }
             } catch (Exception e) {
@@ -393,7 +467,8 @@ public class UsbHid extends CordovaPlugin {
 
 
         public void stopThis() {
-            isStopped = true;
+            if (this!=null)
+               isStopped = true;
         }
 
         public String decodeUtf8(byte[] src) {

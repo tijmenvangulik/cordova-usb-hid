@@ -33,6 +33,15 @@ var cordova_usb_hid;
                 cordova.exec(successCallback, errorCallback, 'UsbHid', 'writeHex', [{ 'opts': writeOpts }]);
             });
         };
+        UsbHidPlugin.prototype.writeRead = function (data, opts) {
+            var writeOpts = opts;
+            if (!writeOpts)
+                writeOpts = {};
+            writeOpts.data = buf2hex(data);
+            return new Promise(function (successCallback, errorCallback) {
+                cordova.exec(successCallback, errorCallback, 'UsbHid', 'writeReadHex', [{ 'opts': writeOpts }]);
+            });
+        };
         UsbHidPlugin.prototype.close = function () {
             return new Promise(function (successCallback, errorCallback) {
                 cordova.exec(successCallback, errorCallback, 'UsbHid', 'close', []);

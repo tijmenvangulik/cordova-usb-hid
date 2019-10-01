@@ -16,15 +16,29 @@ namespace cordova_usb_hid {
 
     }
     export interface OpenOptions {
+        //check your device docs to set the package size. (when you use the wrong size read/write can fail or simply return nothing or empty values)
         packetSize? : number;
-        timeout?: number;
+        
+        //skipp read bufers which all zero's
         skippZeroResults? : boolean;
-        skippFirstByteZero? : boolean
+        //skipp read buffers which has the first byte 0. (better performance than skippZeroResults)
+        skippFirstByteZero? : boolean;
+        //read time out in ms, default 100ms. This is good when you use the Read callback function
+        // (when you use a long value the read thread will only stop after the  delay)
+        // when you use writeRead it is better to increase this value, (depending on the max response time of your device)
+        readTimeout?: number;
+        //write time out in ms, default 500ms
+        writeTimeout?: number;
     }
     export interface WriteOptions {
         packetsize? : number;
-        timeout? : number;
-    }        
+        writeTimeout? : number;
+    }
+    export interface WriteReadOptions {
+        packetsize? : number;
+        readTimeout?: number;
+        writeTimeout?: number;
+    }         
     /** @internal */   
     function buf2hex(buffer : ArrayBuffer) : string { // buffer is an ArrayBuffer
         return Array.prototype.map.call(new Uint8Array(buffer), x => ('00' + x.toString(16)).slice(-2)).join('');
@@ -86,7 +100,22 @@ namespace cordova_usb_hid {
             });
             
         }
-        
+        public writeRead(data : ArrayBuffer,opts? : WriteReadOptions) : Promise<ArrayBuffer> {
+            var writeOpts : any=opts;
+            if (!writeOpts) writeOpts={};
+            
+            writeOpts.data=buf2hex(data);
+            return new Promise((successCallback,errorCallback)=>{
+                cordova.exec(
+                    successCallback,
+                    errorCallback,
+                    'UsbHid',
+                    'writeReadHex',
+                    [{'opts': writeOpts}]
+                );
+            });
+            
+        }
         public close() : Promise<void> {
             return new Promise((successCallback,errorCallback)=>{
                 cordova.exec(

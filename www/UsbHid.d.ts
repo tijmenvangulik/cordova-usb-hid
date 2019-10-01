@@ -14,19 +14,26 @@ declare namespace cordova_usb_hid {
     }
     interface OpenOptions {
         packetSize?: number;
-        timeout?: number;
         skippZeroResults?: boolean;
         skippFirstByteZero?: boolean;
+        readTimeout?: number;
+        writeTimeout?: number;
     }
     interface WriteOptions {
         packetsize?: number;
-        timeout?: number;
+        writeTimeout?: number;
+    }
+    interface WriteReadOptions {
+        packetsize?: number;
+        readTimeout?: number;
+        writeTimeout?: number;
     }
     class UsbHidPlugin {
         enumerateDevices(): Promise<UsbHidDevices>;
         requestPermission(device: UsbHidDevice): Promise<void>;
         open(opts?: OpenOptions): Promise<void>;
         write(data: ArrayBuffer, opts?: WriteOptions): Promise<void>;
+        writeRead(data: ArrayBuffer, opts?: WriteReadOptions): Promise<ArrayBuffer>;
         close(): Promise<void>;
         registerReadCallback(readCallback: ReadCallBack): Promise<ArrayBuffer>;
     }

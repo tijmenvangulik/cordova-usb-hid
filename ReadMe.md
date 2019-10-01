@@ -21,7 +21,7 @@ or npm :
 
 In this example I open an read/write connection with 121 package size. The data is csafe specific replace it with data for your device. The example picks the first device. You could do here more complex filtering.
 
-using async await
+using async await with a callback continously reading the data
 
 ```typescript
 
@@ -29,42 +29,61 @@ using async await
                 console.log("received "+buf2hex(response));
     });
     var devices=await cordova.plugins.UsbHid.enumerateDevices();
+    if (devices.length==0) throw "Device not found";
     await cordova.plugins.UsbHid.requestPermission(devices[0]);
     await cordova.plugins.UsbHid.open({
                                   packetSize:121,
                                   skippFirstByteZero:true,
-                                  timeout:1000});
+                                  writeTimeout:500});
     var data= new Uint8Array([0x02,0xF0,0xFD,0x00,0x80,0x80,0xF2]);
     await cordova.plugins.UsbHid.write(data)
     
 ```
-same example using promises
+
+using async await and a writeRead routine sending one package and waiting for the result.
 
 ```typescript
-    var errorHandler=(e)=>{console.error(e)};
+
+    await cordova.plugins.UsbHid.registerReadCallback((response)=>{
+                console.log("received "+buf2hex(response));
+    });
+    var devices=await cordova.plugins.UsbHid.enumerateDevices();
+    if (devices.length==0) throw "Device not found";
+    await cordova.plugins.UsbHid.requestPermission(devices[0]);
+    await cordova.plugins.UsbHid.open({
+                                  packetSize:121,
+                                  skippFirstByteZero:true,
+                                  writeTimeout:500,
+                                  readTimeout:1000});
+    var data= new Uint8Array([0x02,0xF0,0xFD,0x00,0x80,0x80,0xF2]);
+    var response = await cordova.plugins.UsbHid.writeRead(data);
+    console.log("received "+buf2hex(response));;
+    
+```
+
+same example using promises and an read callback handler
+
+```typescript
+
     cordova.plugins.UsbHid.registerReadCallback((response)=>{
                 console.log("received "+buf2hex(response));
-    })
-    .then(()=>{
-        cordova.plugins.UsbHid.enumerateDevices()
-        .then(devices=>{
-            console.log("Devices :"+JSON.stringify(devices));
-            if (devices.length>0) {
-                cordova.plugins.UsbHid.requestPermission(devices[0])
-                .then(()=>{
-                    cordova.plugins.UsbHid.open({
+    }).then(()=>{
+        return cordova.plugins.UsbHid.enumerateDevices();
+    }).then((devices)=>{
+        console.log("Devices :"+JSON.stringify(devices));
+        if (devices.length>0) 
+            return cordova.plugins.UsbHid.requestPermission(devices[0]);
+        else return Promise.reject("device not found");  
+    }).then(()=>{
+        return cordova.plugins.UsbHid.open({
                         packetSize:121,
                         skippFirstByteZero:true,
-                        timeout:1000})                        
-                    .then(()=>{                         
-                        var data= new Uint8Array([0x02,0xF0,0xFD,0x00,0x80,0x80,0xF2]);
-                        cordova.plugins.UsbHid.write(data)
-                        .catch(errorHandler);
-                    }).catch(errorHandler);
-                }).catch(errorHandler);
-            }
-        }).catch(errorHandler);
-    }).catch(errorHandler);
+                        timeout:1000})   
+    }).then(()=>{
+        var data= new Uint8Array([0x02,0xF0,0xFD,0x00,0x80,0x80,0xF2]);
+        cordova.plugins.UsbHid.write(data)
+    }).catch((e)=>{console.error(e)});    
+        
 ```
 # Api type definitions
 
