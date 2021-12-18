@@ -89,7 +89,7 @@ public class UsbHid extends CordovaPlugin {
         return false;
     }
 
-    private void enumerateDevices(CallbackContext callbackContext) {
+    private void enumerateDevices(final CallbackContext callbackContext) {
         cordova.getThreadPool().execute(new Runnable() {
             public void run() {
                 try {
