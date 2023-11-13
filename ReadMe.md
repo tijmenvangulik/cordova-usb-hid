@@ -94,6 +94,7 @@ The typescript type definitions can be found [here](www/UsbHid.d.ts)
         <config-file parent="/manifest/application" target="AndroidManifest.xml">
            <meta-data android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
                 android:resource="@xml/device_filter" />
+            <uses-feature android:name="android.hardware.usb.host" />
         </config-file>
         <resource-file src="device_filter.xml" target="res/xml/device_filter.xml" />
 ```

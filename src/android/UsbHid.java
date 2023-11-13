@@ -156,7 +156,7 @@ public class UsbHid extends CordovaPlugin {
                     String name=opts.getString("name");
                     device = manager.getDeviceList().get(name);
 
-                    mPermissionIntent = PendingIntent.getBroadcast(cordova.getActivity(), 0, new Intent(UsbBroadcastReceiver.USB_PERMISSION), 0);
+                    mPermissionIntent = PendingIntent.getBroadcast(cordova.getActivity(), 0, new Intent(UsbBroadcastReceiver.USB_PERMISSION), PendingIntent.FLAG_IMMUTABLE);
                     IntentFilter filter = new IntentFilter(UsbBroadcastReceiver.USB_PERMISSION);
                     UsbBroadcastReceiver usbReceiver = new UsbBroadcastReceiver(callbackContext, cordova.getActivity());
 
