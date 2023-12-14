@@ -28,6 +28,16 @@ declare namespace cordova_usb_hid {
         readTimeout?: number;
         writeTimeout?: number;
     }
+    interface GetFeatureOptions {
+        reportId?: number;
+        packetsize?: number;
+        readTimeout?: number;
+    }
+    interface SetFeatureOptions {
+        reportId?: number;
+        packetsize?: number;
+        writeTimeout?: number;
+    }
     class UsbHidPlugin {
         enumerateDevices(): Promise<UsbHidDevices>;
         requestPermission(device: UsbHidDevice): Promise<void>;
@@ -36,6 +46,8 @@ declare namespace cordova_usb_hid {
         writeRead(data: ArrayBuffer, opts?: WriteReadOptions): Promise<ArrayBuffer>;
         close(): Promise<void>;
         registerReadCallback(readCallback: ReadCallBack): Promise<ArrayBuffer>;
+        getFeatureReport(opts?: GetFeatureOptions): Promise<ArrayBuffer>;
+        setFeatureReport(data: ArrayBuffer, opts?: SetFeatureOptions): Promise<void>;
     }
 }
 interface CordovaPlugins {

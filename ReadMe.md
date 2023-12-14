@@ -7,7 +7,9 @@ this plugin is a merge of two existing plugin and some features which I needed t
 
     https://github.com/noconsulting/cordova-plugin-hid-usb/blob/master/src/android/fr/noconsulting/UsbHid.java
 
-
+Status reports are provided by artec-kk
+    https://github.com/artec-kk/cordova-usb-hid/tree/artec
+    
 # Usage
 
 add the plugin to cordova:
@@ -82,6 +84,18 @@ same example using promises and an read callback handler
     }).catch((e)=>{console.error(e)});    
         
 ```
+
+Use the getFeatureReport and SetFeatureReport functions for report management. For example:
+When you do not define the reportId you will request report 0
+
+```typescript
+
+var buffer=await cordova.plugins.UsbHid.getFeatureReport({reportId:1});
+
+await cordova.plugins.UsbHid.setFeatureReport(buffer,{reportId:1});
+
+```
+
 # Api type definitions
 
 The typescript type definitions can be found [here](www/UsbHid.d.ts) 
@@ -122,5 +136,4 @@ declare interface CordovaPlugins {
 
 declare var cordova: Cordova;
 ```
-* There is not yet an special function for sending and receiving reports. However it is easy to do this using the existing functions since an report is just an package and the first byte is the report id. 
-  
+

@@ -32,6 +32,16 @@ import android.util.Log;
 public class UsbHid extends CordovaPlugin {
     private final String TAG = UsbHid.class.getSimpleName();
 
+    /** GET_REPORT request code */
+    private final int REQUEST_GET_REPORT = 0x01;
+    /** SET_REPORT request code */
+    private final int REQUEST_SET_REPORT = 0x09;
+    /** INPUT report type */
+    private final int REPORT_TYPE_INPUT = 0x0100;
+    /** OUTPUT report type */
+    private final int REPORT_TYPE_OUTPUT = 0x0200;
+
+
     private USBThreadDataReceiver usbThreadDataReceiver;
 
     private UsbManager manager;
@@ -84,12 +94,22 @@ public class UsbHid extends CordovaPlugin {
 
             this.writeReadHex(opts,callbackContext);
             return true;
+        } else if (action.equals("getFeatureReport")) {
+            JSONObject opts = arg_object.has("opts")? arg_object.getJSONObject("opts") : new JSONObject();
+
+            this.getFeatureReport(opts,callbackContext);
+            return true;
+        } else if (action.equals("setFeatureReport")) {
+            JSONObject opts = arg_object.has("opts")? arg_object.getJSONObject("opts") : new JSONObject();
+
+            this.setFeatureReport(opts,callbackContext,true);
+            return true;
         }
 
         return false;
     }
 
-    private void enumerateDevices(CallbackContext callbackContext) {
+    private void enumerateDevices(final CallbackContext callbackContext) {
         cordova.getThreadPool().execute(new Runnable() {
             public void run() {
                 try {
@@ -102,7 +122,6 @@ public class UsbHid extends CordovaPlugin {
                         addProperty(obj, "vendorId", usbDevice.getVendorId());
                         addProperty(obj, "productId", usbDevice.getProductId());
                         if (Build.VERSION.SDK_INT>21 ) {
-                            addProperty(obj, "serialNumber", usbDevice.getSerialNumber());
                             addProperty(obj, "productName", usbDevice.getProductName());
                         }
 
@@ -156,7 +175,14 @@ public class UsbHid extends CordovaPlugin {
                     String name=opts.getString("name");
                     device = manager.getDeviceList().get(name);
 
-                    mPermissionIntent = PendingIntent.getBroadcast(cordova.getActivity(), 0, new Intent(UsbBroadcastReceiver.USB_PERMISSION), PendingIntent.FLAG_IMMUTABLE);
+                    int pendingFlags;
+                    if(Build.VERSION.SDK_INT >= 31) {
+                        // pendingFlags = PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT;
+                        pendingFlags = PendingIntent.FLAG_MUTABLE;
+                    } else {
+                        pendingFlags = PendingIntent.FLAG_UPDATE_CURRENT;
+                    }
+                    mPermissionIntent = PendingIntent.getBroadcast(cordova.getActivity(), 0, new Intent(UsbBroadcastReceiver.USB_PERMISSION), pendingFlags);
                     IntentFilter filter = new IntentFilter(UsbBroadcastReceiver.USB_PERMISSION);
                     UsbBroadcastReceiver usbReceiver = new UsbBroadcastReceiver(callbackContext, cordova.getActivity());
 
@@ -247,7 +273,8 @@ public class UsbHid extends CordovaPlugin {
                     connection = null;
                     endPointRead=null;
                     endPointWrite=null;
-                    usbThreadDataReceiver.stopThis();
+                    if (usbThreadDataReceiver!=null)
+                        usbThreadDataReceiver.stopThis();
                     callbackContext.success();
                 }
                 catch (Exception e) {
@@ -367,9 +394,86 @@ public class UsbHid extends CordovaPlugin {
                 catch (Exception e) {
                     callbackContext.error("Error writing and reading: "+e.getMessage());
                 }
+            }
+        });
+    }
 
+    private void getFeatureReport(final JSONObject opts, final CallbackContext callbackContext) {
+        cordova.getThreadPool().execute(new Runnable() {
+            public void run() {
+                UsbInterface intf = device.getInterface(0);
 
+                try {
+                    int reportId = 0;
+                    int localPacketSize = packetSize;
+                    if (opts.has("reportId"))
+                        reportId = opts.getInt("reportId");
+                    if (opts.has("packetSize"))
+                        localPacketSize = opts.getInt("packetSize");
+                    int localTimeout = readTimeout;
+                    if (opts.has("readTimeout"))
+                        localTimeout = opts.getInt("readTimeout");
 
+                    byte[] buffer = new byte[localPacketSize];
+                    int result = connection.controlTransfer(
+                            UsbConstants.USB_DIR_IN | UsbConstants.USB_TYPE_CLASS
+                                    | UsbConstants.USB_INTERFACE_SUBCLASS_BOOT,
+                            REQUEST_GET_REPORT,
+                            reportId | REPORT_TYPE_OUTPUT,
+                            intf.getId(), buffer, localPacketSize, localTimeout);
+
+                    if (result > 0) {
+                        PluginResult pResult = new PluginResult(PluginResult.Status.OK, buffer);
+                        pResult.setKeepCallback(true);
+                        callbackContext.sendPluginResult(pResult);
+                    } else {
+                        callbackContext.error("read error " + result);
+                    }
+                } catch (Exception e) {
+                    // deal with error
+                    Log.d(TAG, e.getMessage());
+                    callbackContext.error(e.getMessage());
+                }
+            }
+        });
+    }
+
+    private void setFeatureReport(final JSONObject opts, final CallbackContext callbackContext, boolean returnSucess) {
+        cordova.getThreadPool().execute(new Runnable() {
+            public void run() {
+                UsbInterface intf = device.getInterface(0);
+
+                try {
+                    String data = opts.getString("data");
+                    int reportId = 0;
+                    int localPacketSize = packetSize;
+                    if (opts.has("reportId"))
+                        reportId = opts.getInt("reportId");
+                    if (opts.has("packetSize"))
+                        localPacketSize = opts.getInt("packetSize");
+                    int localTimeout = writeTimeout;
+                    if (opts.has("writeTimeout"))
+                        localTimeout = opts.getInt("writeTimeout");
+
+                    byte[] buffer = hexStringToByteArray(data, localPacketSize);
+                    int result = connection.controlTransfer(
+                            UsbConstants.USB_DIR_OUT | UsbConstants.USB_TYPE_CLASS
+                                    | UsbConstants.USB_INTERFACE_SUBCLASS_BOOT,
+                            REQUEST_SET_REPORT,
+                            reportId | REPORT_TYPE_INPUT,
+                            intf.getId(), buffer, buffer.length, localTimeout);
+
+                    if (result < 0) {
+                        callbackContext.error("Can not transfer data to the device.");
+                        return;
+                    } else if (returnSucess) {
+                        callbackContext.success(result + " bytes written.");
+                    }
+                } catch (Exception e) {
+                    // deal with error
+                    Log.d(TAG, e.getMessage());
+                    callbackContext.error(e.getMessage());
+                }
             }
         });
     }

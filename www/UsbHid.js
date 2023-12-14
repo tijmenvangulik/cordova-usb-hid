@@ -57,6 +57,20 @@ var cordova_usb_hid;
                 }, errorCallback, 'UsbHid', 'registerReadCallback', []);
             });
         };
+        UsbHidPlugin.prototype.getFeatureReport = function (opts) {
+            return new Promise(function (successCallback, errorCallback) {
+                cordova.exec(successCallback, errorCallback, 'UsbHid', 'getFeatureReport', [{ 'opts': opts }]);
+            });
+        };
+        UsbHidPlugin.prototype.setFeatureReport = function (data, opts) {
+            var writeOpts = opts;
+            if (!writeOpts)
+                writeOpts = {};
+            writeOpts.data = buf2hex(data);
+            return new Promise(function (successCallback, errorCallback) {
+                cordova.exec(successCallback, errorCallback, 'UsbHid', 'setFeatureReport', [{ 'opts': writeOpts }]);
+            });
+        };
         return UsbHidPlugin;
     }());
     cordova_usb_hid.UsbHidPlugin = UsbHidPlugin;
