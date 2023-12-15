@@ -1,6 +1,6 @@
 {
   "name": "cordova-plugin-usb-hid",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "cordova plugin usb hid",
   "cordova": {
     "id": "cordova-plugin-usb-hid",

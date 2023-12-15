@@ -45,7 +45,7 @@ declare namespace cordova_usb_hid {
         write(data: ArrayBuffer, opts?: WriteOptions): Promise<void>;
         writeRead(data: ArrayBuffer, opts?: WriteReadOptions): Promise<ArrayBuffer>;
         close(): Promise<void>;
-        registerReadCallback(readCallback: ReadCallBack): Promise<ArrayBuffer>;
+        registerReadCallback(readCallback: ReadCallBack): Promise<void>;
         getFeatureReport(opts?: GetFeatureOptions): Promise<ArrayBuffer>;
         setFeatureReport(data: ArrayBuffer, opts?: SetFeatureOptions): Promise<void>;
     }
